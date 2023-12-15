@@ -8,6 +8,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsup",
+    "test": "exit 0",
     "build:watch": "tsup --watch",
     "ci:version": "changeset version && bun install --no-frozen-lockfile",
     "ci:publish": "changeset publish",
