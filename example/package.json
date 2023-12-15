@@ -16,6 +16,6 @@
     "prometheus:run": "docker run -p 9090:9090 -v ./prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus --config.file=/etc/prometheus/prometheus.yml --enable-feature=remote-write-receiver"
   },
   "dependencies": {
-    "@playwright/test": "^1.40.1"
+    "@playwright/test": "1.40.1"
   }
 }
