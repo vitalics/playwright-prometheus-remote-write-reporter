@@ -1,0 +1,7 @@
+.vscode
+.github
+.husky
+example
+node_modules
+src
+tsup.config.ts

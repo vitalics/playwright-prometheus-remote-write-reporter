@@ -1,13 +1,15 @@
 {
   "compilerOptions": {
-    "lib": ["ESNext"],
+    "lib": [
+      "ESNext"
+    ],
     "module": "esnext",
     "target": "esnext",
+    "checkJs": true,
     "moduleResolution": "bundler",
     "moduleDetection": "force",
     "allowImportingTsExtensions": true,
     "noEmit": true,
-    "composite": true,
     "strict": true,
     "downlevelIteration": true,
     "skipLibCheck": true,
@@ -18,5 +20,12 @@
     "types": [
       "bun-types" // add Bun global
     ]
-  }
+  },
+  "include": [
+    "./types/index.d.ts",
+    "./src/*.ts"
+  ],
+  "exclude": [
+    "dist/*"
+  ]
 }
