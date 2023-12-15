@@ -32,7 +32,6 @@ bun a playwright-prometheus-remote-write-reporter # bun
 In your `playwright.config.ts` add next lines:
 
 ```ts
-import PrometheusRWReporter from 'playwright-prometheus-remote-write-reporter'
 
 export default defineConfig({
 // ...
@@ -107,11 +106,17 @@ This metrics collects every reporter lifecycle.
 | node_memory_heap_total    | memory usage of the Node.js process measured in bytes [7]                            | process.memotyUsage |
 
 [1]: Do not use "process.env.name" variable since it can overwrite your "node_env" metric.
+
 [2]: docs: https://nodejs.org/docs/latest/api/process.html#processenv
+
 [3]: docs: https://nodejs.org/docs/latest/api/process.html#processargv
+
 [4]: docs: https://nodejs.org/docs/latest/api/process.html#processversions
+
 [5]: docs: https://nodejs.org/docs/latest/api/os.html#osarch
+
 [6]: docs: https://nodejs.org/docs/latest/api/process.html#processcpuusagepreviousvalue
+
 [7]: docs: https://nodejs.org/docs/latest/api/process.html#processmemoryusage
 
 ## Using custom metrics
