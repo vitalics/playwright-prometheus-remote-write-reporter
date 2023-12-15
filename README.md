@@ -1,4 +1,4 @@
-# playwright-prometheus-reporter
+# playwright-prometheus-remote-write-reporter
 
 ## Get Started
 
@@ -21,10 +21,10 @@ You may found complete example in `example` folder.
 ## Installation
 
 ``` bash
-npm i playwright-prometheus-remote-writer-reporter # npm
-yarn add playwright-prometheus-remote-writer-reporter # yarn
-pnpm add playwright-prometheus-remote-writer-reporter # pnpm
-bun a playwright-prometheus-remote-writer-reporter # bun
+npm i playwright-prometheus-remote-write-reporter # npm
+yarn add playwright-prometheus-remote-write-reporter # yarn
+pnpm add playwright-prometheus-remote-write-reporter # pnpm
+bun a playwright-prometheus-remote-write-reporter # bun
 ```
 
 ## Configure reporter
@@ -32,12 +32,12 @@ bun a playwright-prometheus-remote-writer-reporter # bun
 In your `playwright.config.ts` add next lines:
 
 ```ts
-import PrometheusRWReporter from 'playwright-prometheus-remote-writer-reporter'
+import PrometheusRWReporter from 'playwright-prometheus-remote-write-reporter'
 
 export default defineConfig({
 // ...
   reporter: [
-    ['playwright-prometheus-remote-writer-reporter', {
+    ['playwright-prometheus-remote-write-reporter', {
       // options object
     }]
   ],
@@ -120,7 +120,7 @@ You can define own metrics following next code:
 
 ```ts
 import { test } from '@playwright/test'
-import { Counter, Gauge } from 'playwright-prometheus-remote-writer-reporter'
+import { Counter, Gauge } from 'playwright-prometheus-remote-write-reporter'
 
 const countOfUrlCalls = new Counter({
   // only name is requrired
@@ -180,7 +180,7 @@ example:
 
 ```ts
 import { test as base } from '@playwright/test'
-import { Counter, Gauge } from 'playwright-prometheus-remote-writer-reporter'
+import { Counter, Gauge } from 'playwright-prometheus-remote-write-reporter'
 
 type Context = {
   urlCalls: Counter
