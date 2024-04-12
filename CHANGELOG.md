@@ -1,5 +1,13 @@
 # playwright-prometheus-remote-write-reporter
 
+## 0.0.4
+
+### Patch Changes
+
+- 2b799f3: Fix peer dependency.
+
+  Add free memory metric for node.js internals.
+
 ## 0.0.3
 
 ### Patch Changes
