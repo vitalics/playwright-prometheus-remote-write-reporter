@@ -252,13 +252,12 @@ export default class PrometheusReporter implements Reporter {
       this.node_memory_heap_used._getSeries(),
       this.node_memory_rss._getSeries(),
       this.node_os._getSeries(),
-      this.node_env._getSeries(),
       this.node_argv._getSeries(),
       this.node_versions._getSeries(),
     ];
     
     // Conditionally include node_env series
-    if (this.options.nodeEnvEnable) {
+    if (this.options.nodeEnvEnable == true) {
       stats.push(this.node_env._getSeries());
     }
     
