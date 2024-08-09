@@ -54,6 +54,7 @@ export default defineConfig({
 | prefix        | Custom metric prefix name                                 | `pw_`                                |
 | auth.username | Basic auth. username                                      | undefined                            |
 | auth.password | Basic auth. password                                      | undefined                            |
+| nodeEnvEnable | Dumps all envvars to `node_env` metric                    | false                                |
 
 ## Collected metrics
 
@@ -105,7 +106,7 @@ This metrics collects every reporter lifecycle.
 | node_memory_rss           | memory usage of the Node.js process measured in bytes [7]                            | process.memotyUsage |
 | node_memory_heap_total    | memory usage of the Node.js process measured in bytes [7]                            | process.memotyUsage |
 
-[1]: Do not use "process.env.name" variable since it can overwrite your "node_env" metric.
+[1]: Do not use "process.env.name" variable since it can overwrite your "node_env" metric. Conditionally enabled with `nodeEnvEnable` from reporter configuration as it can leak secrets into Prometheus metrics
 
 [2]: docs: https://nodejs.org/docs/latest/api/process.html#processenv
 

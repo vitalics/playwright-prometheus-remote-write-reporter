@@ -44,6 +44,7 @@ export type PrometheusOptions = {
     /** Basic auth. Password */
     password?: string;
   };
+  nodeEnvEnable?: boolean;
   /** @default 'pw_' */
   prefix?: string;
 };
@@ -221,6 +222,7 @@ export default class PrometheusReporter implements Reporter {
     this.options.url = options?.serverUrl ?? DEFAULT_WRITER_URL;
     this.options.headers = options?.headers ?? {};
     this.options.fetch = fetch as never;
+    this.options.nodeEnvEnable = options?.nodeEnvEnable ?? false;
     this.prefix = options.prefix ?? DEFAULT_PREFIX;
   }
 
@@ -253,9 +255,16 @@ export default class PrometheusReporter implements Reporter {
       this.node_env._getSeries(),
       this.node_argv._getSeries(),
       this.node_versions._getSeries(),
-    ].map((s) => this.mapTimeseries(s));
+    ];
+    
+    // Conditionally include node_env series
+    if (this.options.nodeEnvEnable) {
+      stats.push(this.node_env._getSeries());
+    }
+    
+    const mappedStats = stats.map((s) => this.mapTimeseries(s));
 
-    await this.send(stats);
+    await this.send(mappedStats);
   }
 
   private async send(series: Timeseries | Timeseries[]) {
