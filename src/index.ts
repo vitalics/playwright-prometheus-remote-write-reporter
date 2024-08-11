@@ -46,6 +46,12 @@ export type PrometheusOptions = {
   };
   /** @default 'pw_' */
   prefix?: string;
+  /**
+   * Additional labels to apply to each timeseries.
+   * @example
+   * [{ instance: "hostname" }]
+   */
+  labels?: Record<string, string>[];
 };
 
 const DEFAULT_PREFIX = `pw_`;
@@ -222,6 +228,7 @@ export default class PrometheusReporter implements Reporter {
     this.options.headers = options?.headers ?? {};
     this.options.fetch = fetch as never;
     this.prefix = options.prefix ?? DEFAULT_PREFIX;
+    this.options.labels = options?.labels ?? [];
   }
 
   private memoryDelta: MemoryUsageObject | undefined;
