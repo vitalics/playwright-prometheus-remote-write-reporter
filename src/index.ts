@@ -51,6 +51,9 @@ export type PrometheusOptions = {
 const DEFAULT_PREFIX = `pw_`;
 const DEFAULT_WRITER_URL = "http://localhost:9090/api/v1/write";
 
+type CPUUsageObject = ReturnType<typeof cpuUsage>
+type MemoryUsageObject = ReturnType<typeof memoryUsage>
+
 export default class PrometheusReporter implements Reporter {
   private readonly options: Options = {};
   private readonly prefix: string;
@@ -233,7 +236,7 @@ export default class PrometheusReporter implements Reporter {
 
     this.node_memory_free.set(freemem());
 
-    this.memoryDelta = memoryUsage(this.memoryDelta);
+    this.memoryDelta = memoryUsage();
     this.node_memory_array_buffers.set(this.memoryDelta.arrayBuffers);
     this.node_memory_external.set(this.memoryDelta.external);
     this.node_memory_heap_total.set(this.memoryDelta.heapTotal);
