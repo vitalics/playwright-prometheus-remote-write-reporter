@@ -46,6 +46,12 @@ export type PrometheusOptions = {
   };
   /** @default 'pw_' */
   prefix?: string;
+  /**
+   * env variables to send.
+   * @default `process.env`
+   * @see {@link https://nodejs.org/docs/latest/api/process.html#processenv node.js - process.env}  
+   */
+  env?: Record<string, string | undefined>
 };
 
 const DEFAULT_PREFIX = `pw_`;
@@ -57,6 +63,7 @@ type MemoryUsageObject = ReturnType<typeof memoryUsage>
 export default class PrometheusReporter implements Reporter {
   private readonly options: Options = {};
   private readonly prefix: string;
+  private readonly env: Record<string, string | undefined>
   private pw_projects: Counter[] = [];
   private readonly pw_step_total_count = new Counter({
     name: "step_total_count",
@@ -202,13 +209,7 @@ export default class PrometheusReporter implements Reporter {
     1,
   );
 
-  private readonly node_env = new Counter(
-    {
-      name: "node_env",
-      ...env,
-    },
-    1,
-  );
+  private readonly node_env: Counter
 
   private readonly node_versions = new Counter(
     {
@@ -225,6 +226,14 @@ export default class PrometheusReporter implements Reporter {
     this.options.headers = options?.headers ?? {};
     this.options.fetch = fetch as never;
     this.prefix = options.prefix ?? DEFAULT_PREFIX;
+    this.env = options?.env ?? process.env;
+    this.node_env = new Counter(
+      {
+        name: "node_env",
+        ...this.env,
+      },
+      1,
+    );
   }
 
   private memoryDelta: MemoryUsageObject | undefined;
