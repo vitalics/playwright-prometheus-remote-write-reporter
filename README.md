@@ -55,6 +55,8 @@ export default defineConfig({
 | auth.username | Basic auth. username                                      | undefined                            |
 | auth.password | Basic auth. password                                      | undefined                            |
 | labels        | Ext. labels for all metrics. E.g. `[{label1: 'value1'}]`  | undefined                            |
+| env           | Node.js environments object. use `{}` to send nothing     | process.env                          |
+
 
 ## Collected metrics
 

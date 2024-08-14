@@ -52,14 +52,24 @@ export type PrometheusOptions = {
    * [{ instance: "hostname" }]
    */
   labels?: Record<string, string>[];
+  /**
+   * env variables to send.
+   * @default `process.env`
+   * @see {@link https://nodejs.org/docs/latest/api/process.html#processenv node.js - process.env}  
+   */
+  env?: Record<string, string | undefined>
 };
 
 const DEFAULT_PREFIX = `pw_`;
 const DEFAULT_WRITER_URL = "http://localhost:9090/api/v1/write";
 
+type CPUUsageObject = ReturnType<typeof cpuUsage>
+type MemoryUsageObject = ReturnType<typeof memoryUsage>
+
 export default class PrometheusReporter implements Reporter {
   private readonly options: Options = {};
   private readonly prefix: string;
+  private readonly env: Record<string, string | undefined>
   private pw_projects: Counter[] = [];
   private readonly pw_step_total_count = new Counter({
     name: "step_total_count",
@@ -205,13 +215,7 @@ export default class PrometheusReporter implements Reporter {
     1,
   );
 
-  private readonly node_env = new Counter(
-    {
-      name: "node_env",
-      ...env,
-    },
-    1,
-  );
+  private readonly node_env: Counter
 
   private readonly node_versions = new Counter(
     {
@@ -229,6 +233,14 @@ export default class PrometheusReporter implements Reporter {
     this.options.fetch = fetch as never;
     this.prefix = options.prefix ?? DEFAULT_PREFIX;
     this.options.labels = options?.labels ?? [];
+    this.env = options?.env ?? process.env;
+    this.node_env = new Counter(
+      {
+        name: "node_env",
+        ...this.env,
+      },
+      1,
+    );
   }
 
   private memoryDelta: MemoryUsageObject | undefined;
@@ -240,7 +252,7 @@ export default class PrometheusReporter implements Reporter {
 
     this.node_memory_free.set(freemem());
 
-    this.memoryDelta = memoryUsage(this.memoryDelta);
+    this.memoryDelta = memoryUsage();
     this.node_memory_array_buffers.set(this.memoryDelta.arrayBuffers);
     this.node_memory_external.set(this.memoryDelta.external);
     this.node_memory_heap_total.set(this.memoryDelta.heapTotal);
