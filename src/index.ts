@@ -51,7 +51,7 @@ export type PrometheusOptions = {
    * @example
    * [{ instance: "hostname" }]
    */
-  labels?: Record<string, string>[];
+  labels?: Record<string, string>;
   /**
    * env variables to send.
    * @default `process.env`
@@ -232,7 +232,7 @@ export default class PrometheusReporter implements Reporter {
     this.options.headers = options?.headers ?? {};
     this.options.fetch = fetch as never;
     this.prefix = options.prefix ?? DEFAULT_PREFIX;
-    this.options.labels = options?.labels ?? [];
+    this.options.labels = options?.labels ?? {};
     this.env = options?.env ?? process.env;
     this.node_env = new Counter(
       {
