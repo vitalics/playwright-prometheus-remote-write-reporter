@@ -47,6 +47,12 @@ export type PrometheusOptions = {
   /** @default 'pw_' */
   prefix?: string;
   /**
+   * Additional labels to apply to each timeseries.
+   * @example
+   * { instance: "hostname" }
+   */
+  labels?: Record<string, string>;
+  /**
    * env variables to send.
    * @default `process.env`
    * @see {@link https://nodejs.org/docs/latest/api/process.html#processenv node.js - process.env}  
@@ -226,6 +232,7 @@ export default class PrometheusReporter implements Reporter {
     this.options.headers = options?.headers ?? {};
     this.options.fetch = fetch as never;
     this.prefix = options.prefix ?? DEFAULT_PREFIX;
+    this.options.labels = options?.labels ?? {};
     this.env = options?.env ?? process.env;
     this.node_env = new Counter(
       {
