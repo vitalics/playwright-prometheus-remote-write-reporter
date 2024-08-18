@@ -233,6 +233,7 @@ export default class PrometheusReporter implements Reporter {
     this.options.fetch = fetch as never;
     this.prefix = options.prefix ?? DEFAULT_PREFIX;
     this.options.labels = options?.labels ?? {};
+    this.options.auth = options?.auth
     this.env = options?.env ?? process.env;
     this.node_env = new Counter(
       {
