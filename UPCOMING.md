@@ -1,9 +1,11 @@
 # X.X.X
 
-## 💥 Breaking Changes
+This file contains next updates:
 
-## 🚀 Features
+### 💥 Breaking Changes
 
-## 🐛 Fixes
+### 🚀 Features
 
-## 🏡 Chore/Infra/Internal
+### 🐛 Fixes
+
+### 🏡 Chore/Infra/Internal/Tests
