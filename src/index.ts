@@ -49,7 +49,7 @@ export type PrometheusOptions = {
   /**
    * Additional labels to apply to each timeseries.
    * @example
-   * [{ instance: "hostname" }]
+   * { instance: "hostname" }
    */
   labels?: Record<string, string>;
   /**
