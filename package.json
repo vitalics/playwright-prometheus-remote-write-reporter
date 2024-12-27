@@ -39,16 +39,16 @@
   "author": "Vitali Haradkou <vitalicset@yandex.ru>",
   "license": "MIT",
   "devDependencies": {
-    "@changesets/cli": "2.27.1",
-    "@types/node": "22.2.0",
-    "husky": "8.0.3",
-    "tsup": "8.0.1",
-    "typescript": "5.3.3"
+    "@changesets/cli": "2.27.11",
+    "@types/node": "22.10.2",
+    "husky": "9.1.7",
+    "tsup": "8.3.5",
+    "typescript": "5.7.2"
   },
   "peerDependencies": {
     "@playwright/test": ">=1.13.0"
   },
   "dependencies": {
-    "prometheus-remote-write": "0.4.0"
+    "prometheus-remote-write": "0.5.0"
   }
 }
