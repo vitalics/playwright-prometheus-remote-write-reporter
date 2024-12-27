@@ -11,7 +11,7 @@
     "test": "exit 0",
     "build:watch": "tsup --watch",
     "version:upcoming": "changeset",
-    "ci:version": "changeset version && bun install --no-frozen-lockfile",
+    "ci:version": "changeset version && pnpm install",
     "ci:publish": "changeset publish",
     "dx": "husky install"
   },
