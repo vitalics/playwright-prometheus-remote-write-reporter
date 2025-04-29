@@ -1,5 +1,28 @@
 # playwright-prometheus-remote-write-reporter
 
+## 0.2.0
+
+### Minor Changes
+
+- d6a2056: This file contains next updates:
+
+  ### 💥 Breaking Changes
+
+  None
+
+  ### 🚀 Features
+
+  - add step metrics with status values #27
+  - add step duration metrics recorded #27
+
+  ### 🐛 Fixes
+
+  - remove duplicate sending of `testDuration` metric #27
+
+  ### 🏡 Chore/Infra/Internal/Tests
+
+  - add grafana dashboard `dashboard.json` in example folder #27
+
 ## 0.1.1
 
 ### Patch Changes
