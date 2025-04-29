@@ -87,6 +87,8 @@ this metrics below sends periodically and you may found when they sends
 | error_count                  | count of errors                                              | onError                |
 | stdout                       | stdout for test. Reporter logs have label: `internal="true"` | onStdOut               |
 | stderr                       | stdout for test. Reporter logs have label: `internal="true"` | onStdErr               |
+| step_status                  | step status object. 0 failed, 1 success                      | onTestEnd              |
+| step_duration                | step duration in milliseconds                                | onTestEnd              |
 
 ### Node.js internals
 

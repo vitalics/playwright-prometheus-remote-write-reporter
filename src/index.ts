@@ -26,6 +26,7 @@ import type {
 import { pushTimeseries, Options, Timeseries } from "prometheus-remote-write";
 import { Event } from "./utils";
 import { Counter, Gauge } from "./helpers";
+import crypto from "node:crypto";
 
 export type PrometheusOptions = {
   /**
@@ -93,6 +94,12 @@ export default class PrometheusReporter implements Reporter {
     },
     1,
   );
+  private readonly pw_step_duration = new Gauge({
+    name: "step_duration",
+  });
+  private readonly pw_step_status = new Gauge({
+    name: "step_status",
+  });
   private readonly pw_stderr = new Counter({
     name: "stderr",
   });
@@ -413,10 +420,52 @@ export default class PrometheusReporter implements Reporter {
       this.mapTimeseries(this.pw_test_annotations._getSeries()),
       testSeries,
       testDuration,
-      testDuration,
       testRetries,
       this.mapTimeseries(this.test_attachment._getSeries()),
     ]);
+
+    for (const step of result.steps) {
+      this.pw_step_duration.reset();
+      this.pw_step_status.reset();
+
+      const location = step.location
+        ? `${path.relative(process.cwd(), step.location.file)}:${step.location.line}:${step.location.column}`
+        : "unknown";
+      const raw_id = `${step.title}:${step.category}:${location}`;
+      const stepId = crypto.createHash("md5").update(raw_id).digest("hex");
+
+      const labels = {
+        stepId,
+        testId: test.id,
+        testTitle: test.title,
+        stepTitle: step.title,
+        category: step.category,
+        location,
+      };
+
+      const duration = step.duration ?? 0;
+      this.pw_step_duration.labels(labels).set(duration);
+
+      const status = step.error ? 0 : 1;
+      const statusLabels: Record<string, string> = {
+        ...labels,
+        errorMessage: step.error?.message
+          ? step.error.message.replace(/\r?\n|\r/g, " ")
+          : "",
+      };
+      this.pw_step_status.labels(statusLabels).set(status);
+
+      const durSeries = this.pw_step_duration._getSeries();
+      durSeries.samples = durSeries.samples.slice(-1);
+
+      const statusSeries = this.pw_step_status._getSeries();
+      statusSeries.samples = statusSeries.samples.slice(-1);
+
+      await this.send([
+        this.mapTimeseries(durSeries),
+        this.mapTimeseries(statusSeries),
+      ]);
+    }
 
     this.pw_step.reset();
     this.pw_test_annotations.reset();
@@ -425,6 +474,8 @@ export default class PrometheusReporter implements Reporter {
     this.test_retry = this.test_retry.reset();
     this.pw_step_total_duration.reset();
     this.test_attachment_size.reset();
+    this.pw_step_duration.reset();
+    this.pw_step_status.reset();
     this.updateNodejsStats();
   }
 
