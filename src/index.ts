@@ -1,5 +1,6 @@
 import path from "node:path";
-import { cpuUsage, memoryUsage, env, argv, versions } from "node:process";
+import { URL } from "node:url";
+import { cpuUsage, memoryUsage, argv, versions } from "node:process";
 import {
   arch,
   cpus,
@@ -30,8 +31,9 @@ import { Counter, Gauge } from "./helpers";
 export type PrometheusOptions = {
   /**
    * URL of the Prometheus remote write implementation's endpoint.
-   * @default 'http://localhost:9090/api/v1/write' */
-  serverUrl?: string;
+   * @throws "TypeError" if not defined in options
+   */
+  serverUrl: string | URL;
   /**
    * Additional headers to include in the HTTP requests.
    * @example
@@ -53,23 +55,53 @@ export type PrometheusOptions = {
    */
   labels?: Record<string, string>;
   /**
-   * env variables to send.
-   * @default `process.env`
-   * @see {@link https://nodejs.org/docs/latest/api/process.html#processenv node.js - process.env}  
+   * env variables to send. Default is empty object due to security reasons.
+   * @default `{}` empty object
+   * @see {@link https://nodejs.org/docs/latest/api/process.html#processenv node.js - process.env}
+   * @example
+   * // setup all env variables, unsafe ❌
+   * export default defineConfig({
+   *   // ...
+   *   reporter: [
+   *     ['playwright-prometheus-remote-write-reporter', {
+   *       serverUrl: 'http://localhost:9090/api/v1/write',
+   *       env: process.env // setup all env variables. Use it own risk
+   *     }]
+   *   ],
+   *   // ...
+   * });
+   * @example
+   * // collect system info only - good ✅
+   * import os from 'node:os'
+   * export default defineConfig({
+   *   // ...
+   *   reporter: [
+   *     ['playwright-prometheus-remote-write-reporter', {
+   *       serverUrl: 'http://localhost:9090/api/v1/write',
+   *       env: {
+   *         user: os.userInfo().username,
+   *         platform: os.platform(),
+   *         type: os.type(),
+   *         version: os.version(),
+   *         productVersion: process.env.MY_PRODUCT_VERSION, // e.g. 2.4.8
+   *      },
+   *     }]
+   *   ],
+   *   // ...
+   * });
    */
-  env?: Record<string, string | undefined>
+  env?: Record<string, string | undefined>;
 };
 
 const DEFAULT_PREFIX = `pw_`;
-const DEFAULT_WRITER_URL = "http://localhost:9090/api/v1/write";
 
-type CPUUsageObject = ReturnType<typeof cpuUsage>
-type MemoryUsageObject = ReturnType<typeof memoryUsage>
+type CPUUsageObject = ReturnType<typeof cpuUsage>;
+type MemoryUsageObject = ReturnType<typeof memoryUsage>;
 
 export default class PrometheusReporter implements Reporter {
   private readonly options: Options = {};
   private readonly prefix: string;
-  private readonly env: Record<string, string | undefined>
+  private readonly env: Record<string, string | undefined>;
   private pw_projects: Counter[] = [];
   private readonly pw_step_total_count = new Counter({
     name: "step_total_count",
@@ -79,19 +111,19 @@ export default class PrometheusReporter implements Reporter {
       name: "test_step_total_duration",
       unit: "ms",
     },
-    0,
+    0
   );
   private readonly pw_test_annotations = new Counter(
     {
       name: "test_annotation",
     },
-    0,
+    0
   );
   private readonly pw_step = new Counter(
     {
       name: "test_step",
     },
-    1,
+    1
   );
   private readonly pw_stderr = new Counter({
     name: "stderr",
@@ -103,13 +135,13 @@ export default class PrometheusReporter implements Reporter {
     {
       name: "config",
     },
-    1,
+    1
   );
   private test_attachment = new Counter(
     {
       name: "test_attachment",
     },
-    0,
+    0
   );
   private test_attachment_size = new Gauge({
     name: "test_attachment_size",
@@ -146,15 +178,18 @@ export default class PrometheusReporter implements Reporter {
     name: "tests_total_count",
   });
   private readonly skipped_tests_count = new Counter({
-    name: "tests_skip_count",
+    name: "tests_skipped_count",
+  });
+  private readonly timed_out_tests_count = new Counter({
+    name: "tests_timed_out_count",
   });
   private readonly passed_count = new Counter({
-    name: "tests_pass_count",
+    name: "tests_passed_count",
   });
   private readonly failed_count = new Counter({
-    name: "tests_fail_count",
+    name: "tests_failed_count",
   });
-  // Node.js internals. Usefull to see memory leaks
+  // Node.js internals. Useful to see memory leaks
   private readonly node_memory_heap_total = new Gauge({
     name: "node_memory_heap_total",
     unit: "bytes",
@@ -190,10 +225,10 @@ export default class PrometheusReporter implements Reporter {
     {
       name: "node_argv",
       ...Object.fromEntries(
-        argv.map((value, index) => [index, value] as const),
+        argv.map((value, index) => [index, value] as const)
       ),
     },
-    1,
+    1
   );
   private readonly node_os = new Counter(
     {
@@ -212,35 +247,54 @@ export default class PrometheusReporter implements Reporter {
       type: type(),
       version: version(),
     },
-    1,
+    1
   );
 
-  private readonly node_env: Counter
+  private readonly node_env: Counter;
 
   private readonly node_versions = new Counter(
     {
       name: "node_versions",
       ...versions,
     },
-    1,
+    1
   );
 
-  /** timeserties from user tests */
+  /** timeseries from user tests */
   private readonly timeseries: Timeseries[] = [];
   constructor(options: PrometheusOptions = {} as PrometheusOptions) {
-    this.options.url = options?.serverUrl ?? DEFAULT_WRITER_URL;
+    this.options.url =
+      new URL(options.serverUrl).toString() ??
+      (() => {
+        throw new TypeError(
+          `'serverUrl' is not defined for 'playwright-prometheus-remote-write-reporter' package. You can set it by following example:
+
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  // ...
+  reporter: [
+    ['playwright-prometheus-remote-write-reporter', {
+      serverUrl: 'http://localhost:9090/api/v1/write'
+    }]
+  ],
+  // ...
+});
+`
+        );
+      })();
     this.options.headers = options?.headers ?? {};
     this.options.fetch = fetch as never;
     this.prefix = options.prefix ?? DEFAULT_PREFIX;
     this.options.labels = options?.labels ?? {};
-    this.options.auth = options?.auth
-    this.env = options?.env ?? process.env;
+    this.options.auth = options?.auth;
+    this.env = options?.env ?? {};
     this.node_env = new Counter(
       {
-        name: "node_env",
+        name: "env",
         ...this.env,
       },
-      1,
+      1
     );
   }
 
@@ -307,7 +361,7 @@ export default class PrometheusReporter implements Reporter {
           timeout: String(project.timeout),
           unit: "ms",
         },
-        1,
+        1
       );
     });
     this.updateNodejsStats();
@@ -322,6 +376,9 @@ export default class PrometheusReporter implements Reporter {
     }
     if (result.status === "skipped") {
       this.skipped_tests_count.inc();
+    }
+    if (result.status === "timedOut") {
+      this.timed_out_tests_count.inc();
     }
     this.test_total_count.inc();
     this.total_duration.inc(result.duration);
@@ -397,13 +454,13 @@ export default class PrometheusReporter implements Reporter {
     this.pw_step_total_count.inc(result.steps.length);
 
     const testSeries = this.mapTimeseries(
-      this.test.labels(labels).inc()._getSeries(),
+      this.test.labels(labels).inc()._getSeries()
     );
     const testDuration = this.mapTimeseries(
-      this.test_duration.labels(labels).set(result.duration)._getSeries(),
+      this.test_duration.labels(labels).set(result.duration)._getSeries()
     );
     const testRetries = this.mapTimeseries(
-      this.test_retry.labels(labels).inc(result.retry)._getSeries(),
+      this.test_retry.labels(labels).inc(result.retry)._getSeries()
     );
 
     await this.send([
@@ -412,7 +469,6 @@ export default class PrometheusReporter implements Reporter {
       this.mapTimeseries(this.test_attachment_size._getSeries()),
       this.mapTimeseries(this.pw_test_annotations._getSeries()),
       testSeries,
-      testDuration,
       testDuration,
       testRetries,
       this.mapTimeseries(this.test_attachment._getSeries()),
@@ -455,7 +511,7 @@ export default class PrometheusReporter implements Reporter {
   async onStdOut(
     chunk: string | Buffer,
     test: void | TestCase,
-    result: void | TestResult,
+    result: void | TestResult
   ) {
     const labels = {
       text: Buffer.from(chunk).toString("utf-8"),
@@ -491,11 +547,7 @@ export default class PrometheusReporter implements Reporter {
     this.updateNodejsStats();
   }
 
-  onStdErr(
-    chunk: string | Buffer,
-    test: void | TestCase,
-    result: void | TestResult,
-  ): void {
+  onStdErr(chunk: string | Buffer, test: void | TestCase): void {
     const labels = {
       text: Buffer.from(chunk).toString("utf-8"),
       size: String(chunk.length),
@@ -542,6 +594,7 @@ export default class PrometheusReporter implements Reporter {
       this.mapTimeseries(this.failed_count._getSeries()),
       this.mapTimeseries(this.passed_count._getSeries()),
       this.mapTimeseries(this.skipped_tests_count._getSeries()),
+      this.mapTimeseries(this.timed_out_tests_count._getSeries()),
       this.mapTimeseries(this.test_total_count._getSeries()),
       this.mapTimeseries(this.total_duration._getSeries()),
       this.mapTimeseries(this.tests_total_attachment._getSeries()),
@@ -564,3 +617,4 @@ export default class PrometheusReporter implements Reporter {
 }
 
 export * from "./helpers";
+export * from "./fixture";
