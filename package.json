@@ -1,6 +1,6 @@
 {
   "name": "playwright-prometheus-remote-write-reporter",
-  "version": "1.0.0",
+  "version": "0.2.0",
   "description": "Playwright prometheus remote write reporter. Send your metrics to prometheus in realtime.",
   "type": "module",
   "main": "dist/index.cjs",

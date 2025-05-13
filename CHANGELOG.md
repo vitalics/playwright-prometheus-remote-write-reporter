@@ -1,6 +1,6 @@
 # playwright-prometheus-remote-write-reporter
 
-## 1.0.0
+## 0.2.0
 
 ### Major Changes
 
