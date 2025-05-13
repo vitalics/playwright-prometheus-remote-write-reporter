@@ -5,22 +5,20 @@
 **NOTE**: We need to configure prometheus as a precondition.
 
 1. Enable feature flag - remote write receiver
-2. in prometheus.yml file add next configuration:
+2. in `prometheus.yml` file add next configuration:
 
 ```yaml
-...
+---
 remote_write:
-    # local?
+  # local?
   - url: http://localhost:9090/api/v1/write
-...
-
 ```
 
 You may found complete example in `example` folder.
 
 ## Installation
 
-``` bash
+```bash
 npm i playwright-prometheus-remote-write-reporter # npm
 yarn add playwright-prometheus-remote-write-reporter # yarn
 pnpm add playwright-prometheus-remote-write-reporter # pnpm
@@ -32,31 +30,38 @@ bun a playwright-prometheus-remote-write-reporter # bun
 In your `playwright.config.ts` add next lines:
 
 ```ts
+import { defineConfig } from '@playwright/test'
+import { type PrometheusOptions } from 'playwright-prometheus-remote-write-reporter'
 
 export default defineConfig({
-// ...
+  // ...
   reporter: [
-    ['playwright-prometheus-remote-write-reporter', {
-      // options object
-    }]
+    [
+      "playwright-prometheus-remote-write-reporter",
+      {
+        serverUrl: 'http://localhost:9090/api/v1/write' // same url as declared in precondition
+      } satisfies PrometheusOptions, // for autocomplete
+    ],
   ],
-// ...
-})
-
+  // ...
+});
 ```
 
 ## Reporter Options
 
-| Option        | Description                                               | Default                              |
-|---------------|-----------------------------------------------------------|--------------------------------------|
-| serverUrl     | Remote writer server URL                                  | `http://localhost:9090/api/v1/write` |
-| headers       | Custom headers for prometheus. E.g. `{header1: 'value1'}` | undefined                            |
-| prefix        | Custom metric prefix name                                 | `pw_`                                |
-| auth.username | Basic auth. username                                      | undefined                            |
-| auth.password | Basic auth. password                                      | undefined                            |
-| labels        | Ext. labels for all metrics. E.g. `{label1: 'value1'}`    | undefined                            |
-| env           | Node.js environments object. use `{}` to send nothing     | process.env                          |
+| Option        | Description                                               | Default                                 |
+| ------------- | --------------------------------------------------------- | --------------------------------------- |
+| serverUrl     | Remote writer server URL [1]                              | Not set. But throws an error if not set |
+| headers       | Custom headers for prometheus. E.g. `{header1: 'value1'}` | undefined                               |
+| prefix        | Custom metric prefix name                                 | `pw_`                                   |
+| auth.username | Basic auth. username                                      | `undefined`                             |
+| auth.password | Basic auth. password                                      | `undefined`                             |
+| labels        | Ext. labels for all metrics. E.g. `{label1: 'value1'}`    | `undefined`                             |
+| env           | Node.js environments object [2]                           | `{}`                                    |
 
+[1]: docs - https://prometheus.io/docs/prometheus/latest/configuration/configuration/#remote_write
+
+[2]: We send empty object due to security reasons, since sending **all** environment variables can be visible for any user.
 
 ## Collected metrics
 
@@ -67,7 +72,7 @@ Each metric name starts from `prefix`. By default it's `pw_`. So every metric na
 this metrics below sends periodically and you may found when they sends
 
 | Name                         | Description                                                  | When Sends (hook name) |
-|------------------------------|--------------------------------------------------------------|------------------------|
+| ---------------------------- | ------------------------------------------------------------ | ---------------------- |
 | config                       | playwright configuration object                              | onExit                 |
 | project                      | playwright project object. E.g. chromium, firefox            | onExit                 |
 | test                         | test object                                                  | onTestEnd              |
@@ -83,6 +88,7 @@ this metrics below sends periodically and you may found when they sends
 | tests_skip_count             | count of all skipped tests                                   | onExit                 |
 | tests_pass_count             | count of all passed tests                                    | onExit                 |
 | tests_fail_count             | count of all failed tests                                    | onExit                 |
+| tests_timed_out_count        | count of all timedOut tests                                  | onExit                 |
 | tests_attachment_total_count | count of attachments across all tests                        | onExit                 |
 | error_count                  | count of errors                                              | onError                |
 | stdout                       | stdout for test. Reporter logs have label: `internal="true"` | onStdOut               |
@@ -95,18 +101,18 @@ This metrics collects every reporter lifecycle.
 [Playwright Reporter API hooks](https://playwright.dev/docs/api/class-reporter)
 
 | Name                      | Description                                                                          | Value               |
-|---------------------------|--------------------------------------------------------------------------------------|---------------------|
-| node_env                  | environment variables [1] [2].                                                       | process.env         |
+| ------------------------- | ------------------------------------------------------------------------------------ | ------------------- |
+| node_env                  | environment variables [1] [2].                                                       | undefined           |
 | node_argv                 | command-line arguments passed when the Node.js process was launched (playwright) [3] | process.argv        |
 | node_versions             | version strings of Node.js and its dependencies [4]                                  | process.versions    |
 | node_os                   | information about current operation system [5]                                       | os                  |
 | node_cpu_system           | cpu system utilization [6]                                                           | process.cpuUsage    |
 | node_cpu_user             | cpu user utilization [6]                                                             | process.cpuUsage    |
-| node_memory_external      | memory usage of the Node.js process measured in bytes [7]                            | process.memotyUsage |
-| node_memory_array_buffers | memory usage of the Node.js process measured in bytes [7]                            | process.memotyUsage |
-| node_memory_heap_used     | memory usage of the Node.js process measured in bytes [7]                            | process.memotyUsage |
-| node_memory_rss           | memory usage of the Node.js process measured in bytes [7]                            | process.memotyUsage |
-| node_memory_heap_total    | memory usage of the Node.js process measured in bytes [7]                            | process.memotyUsage |
+| node_memory_external      | memory usage of the Node.js process measured in bytes [7]                            | process.memoryUsage |
+| node_memory_array_buffers | memory usage of the Node.js process measured in bytes [7]                            | process.memoryUsage |
+| node_memory_heap_used     | memory usage of the Node.js process measured in bytes [7]                            | process.memoryUsage |
+| node_memory_rss           | memory usage of the Node.js process measured in bytes [7]                            | process.memoryUsage |
+| node_memory_heap_total    | memory usage of the Node.js process measured in bytes [7]                            | process.memoryUsage |
 
 [1]: Do not use "process.env.name" variable since it can overwrite your "node_env" metric.
 
@@ -127,25 +133,27 @@ This metrics collects every reporter lifecycle.
 You can define own metrics following next code:
 
 ```ts
-import { test } from '@playwright/test'
-import { Counter, Gauge } from 'playwright-prometheus-remote-write-reporter'
+import { test } from "@playwright/test";
+import { Counter, Gauge } from "playwright-prometheus-remote-write-reporter";
 
-const countOfUrlCalls = new Counter({
-  // only name is requrired
-  name: 'url_open' // will automatically appends prefix
-}, 0) // starts from 0
+const countOfUrlCalls = new Counter(
+  {
+    // only name is required
+    name: "url_open", // will automatically appends prefix
+  },
+  0
+); // starts from 0
 
-test('simple counter test', async ({ page }) => {
-  await page.goto('https://example.com')
-  countOfUrlCalls.inc()
+test("simple counter test", async ({ page }) => {
+  await page.goto("https://example.com");
+  countOfUrlCalls.inc();
 
   // ... rest test
-})
+});
 
 test.afterAll(() => {
-  countOfUrlCalls.collect() // sends metrics to prometheus
-})
-
+  countOfUrlCalls.collect(); // sends metrics to prometheus
+});
 ```
 
 ### Counter
@@ -179,7 +187,49 @@ Same for [Counter](#counter)
 
 ### Best practice
 
-We Highly recommend use one of 2 practiceies for send metrics to prometheus via `collect` method:
+1. Add (or create) in your fixture
+
+```ts
+// file: fixture.ts
+import { mergeExpects, mergeTests } from "@playwright/test";
+import {
+  expect as promRWExpect,
+  test as promRWTests,
+} from "playwright-prometheus-remote-write-reporter";
+
+export const expect = mergeExpects(promRWExpect);
+export const test = mergeTests(promRWTests);
+```
+
+2. Use it!
+
+```ts
+// filename: some.test.ts
+import { test, expect } from "./fixture";
+
+test("use some base metric", async ({ useCounterMetric, page }) => {
+  const urlCallsMetric = useCounterMetric("url_calls");
+  const cssInteractionsMetric = useCounterMetric("css_interactions", {
+    selector: "css", // custom label
+  });
+  // your logic
+  await page.goto("https://example.com");
+  urlCallsMetric.inc();
+
+  await page.locator("css=.example-class");
+  cssInteractionsMetric.inc();
+
+  // on test end
+  urlCallsMetric.collect();
+  cssInteractionsMetric.collect();
+});
+```
+
+You can read more about fixtures in [official docs page](https://playwright.dev/docs/test-fixtures#combine-custom-fixtures-from-multiple-modules)
+
+### Other practices
+
+We additional recommends to use one of 2 practices for send metrics to prometheus via `collect` method:
 
 - on afterEach/afterAll hook
 - on base hook
@@ -187,34 +237,33 @@ We Highly recommend use one of 2 practiceies for send metrics to prometheus via 
 example:
 
 ```ts
-import { test as base } from '@playwright/test'
-import { Counter, Gauge } from 'playwright-prometheus-remote-write-reporter'
+import { test as base } from "@playwright/test";
+import { Counter, Gauge } from "playwright-prometheus-remote-write-reporter";
 
 type Context = {
-  urlCalls: Counter
-}
+  urlCalls: Counter;
+};
 
 const test = base.extend<Context>({
   urlCalls: async ({}, use) => {
-    const counter = new Counter({name: 'url_calls'})
-    await use(counter)
+    const counter = new Counter({ name: "url_calls" });
+    await use(counter);
     // automatically sends metrics
-    counter.collect()
-  }
-})
+    counter.collect();
+  },
+});
 
-test('extended test', ({urlCalls}) => {
+test("extended test", ({ urlCalls }) => {
   // ...
-  urlCalls.inc()
-})
+  urlCalls.inc();
+});
 
 // or
-const anotherCounter = new Counter({name: 'custom_counter'})
-base('some test', () => {
-  anotherCounter.inc()
-})
+const anotherCounter = new Counter({ name: "custom_counter" });
+base("some test", () => {
+  anotherCounter.inc();
+});
 base.afterAll(() => {
-  anotherCounter.colect()
-})
-
+  anotherCounter.collect();
+});
 ```
