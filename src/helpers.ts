@@ -1,9 +1,17 @@
 import { Timeseries } from "prometheus-remote-write";
 import { Event } from "./utils";
 
-abstract class Metric {
+export abstract class Metric<
+  const MetricName extends string = string,
+  const Labels extends Record<string, string> = Record<string, string>
+> {
   /** **NOTE:** Must be initialized in constructor */
   protected series!: Timeseries;
+  constructor(metadata: Record<"name", MetricName> & Labels) {
+    if (!metadata.name) {
+      throw new Error(`"name" property for metadata is required`);
+    }
+  }
   /** Internal method */
   _getSeries(): Timeseries {
     return this.series;
@@ -32,16 +40,17 @@ abstract class Metric {
  *
  * Initial value is 0
  */
-export class Counter extends Metric {
+export class Counter<
+  const MetricName extends string = string,
+  const Labels extends Record<string, string> = Record<string, string>
+> extends Metric<MetricName, Labels> {
   protected counter: number = 0;
   constructor(
-    readonly metadata: Record<"name" | (string & {}), string>,
-    protected initialValue = 0,
+    protected readonly metadata: Record<"name", MetricName> & Labels,
+    protected initialValue = 0
   ) {
-    super();
-    if (!metadata.name) {
-      throw new Error(`"name" property for metadata is required`);
-    }
+    super(metadata);
+
     this.counter = initialValue;
     const { name, ...restMetadata } = this.metadata;
     this.series = {
@@ -73,7 +82,10 @@ export class Counter extends Metric {
 }
 
 /* Gauges are similar to Counters but a Gauge's value can be decreased. */
-export class Gauge extends Counter {
+export class Gauge<
+  const MetricName extends string = string,
+  const Labels extends Record<string, string> = Record<string, string>
+> extends Counter<MetricName, Labels> {
   /** Decrement gauge value */
   dec(value = 1) {
     this.counter -= value;

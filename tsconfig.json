@@ -1,8 +1,6 @@
 {
   "compilerOptions": {
-    "lib": [
-      "ESNext"
-    ],
+    "lib": ["ESNext"],
     "module": "esnext",
     "target": "esnext",
     "checkJs": true,
@@ -13,17 +11,10 @@
     "strict": true,
     "downlevelIteration": true,
     "skipLibCheck": true,
-    "jsx": "react-jsx",
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    "allowJs": true,
-    "types": []
+    "allowJs": true
   },
-  "include": [
-    "./types/index.d.ts",
-    "./src/*.ts"
-  ],
-  "exclude": [
-    "dist/*"
-  ]
+  "include": ["./src/*.ts"],
+  "exclude": ["dist/*"]
 }

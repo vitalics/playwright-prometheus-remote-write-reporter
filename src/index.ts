@@ -26,7 +26,7 @@ import type {
 } from "@playwright/test/reporter";
 import { pushTimeseries, Options, Timeseries } from "prometheus-remote-write";
 import { Event } from "./utils";
-import { Counter, Gauge } from "./helpers";
+import { Counter, Gauge, Metric } from "./helpers";
 
 export type PrometheusOptions = {
   /**
@@ -103,49 +103,62 @@ export default class PrometheusReporter implements Reporter {
   private readonly prefix: string;
   private readonly env: Record<string, string | undefined>;
   private pw_projects: Counter[] = [];
-  private readonly pw_step_total_count = new Counter({
-    name: "step_total_count",
+
+  private readonly test_step_total_count = new Counter({
+    name: "test_step_total_count",
+    description: "count of all test_step that was executed in all time",
   });
-  private readonly pw_step_total_duration = new Gauge(
-    {
-      name: "test_step_total_duration",
-      unit: "ms",
-    },
-    0
-  );
-  private readonly pw_test_annotations = new Counter(
-    {
-      name: "test_annotation",
-    },
-    0
-  );
-  private readonly pw_step = new Counter(
-    {
-      name: "test_step",
-    },
-    1
-  );
+  private readonly test_step_total_duration = new Gauge({
+    name: "test_step_total_duration",
+    unit: "ms",
+    description:
+      "duration in milliseconds of all test_step that was executed in all time",
+  });
+  private readonly test_annotation_count = new Counter({
+    name: "test_annotation_count",
+    description: "Count of annotations in tests",
+  });
+  private test_step_duration = new Gauge({
+    name: "test_step_duration",
+    unit: "ms",
+    description: `Total duration of all test steps`,
+  });
+  private test_step_error_count = new Counter({
+    name: "test_step_error_count",
+    description: `Count of errors in test steps`,
+  });
+  private test_step_total_error = new Counter({
+    name: "test_step_total_error",
+    description: `Total errors in test steps`,
+  });
+  private readonly test_step = new Counter({
+    name: "test_step",
+    description: `Individual test steps`,
+  });
   private readonly pw_stderr = new Counter({
     name: "stderr",
+    description: `Standard error stream from Playwright`,
   });
   private readonly pw_stdout = new Counter({
     name: "stdout",
+    description: `Standard output stream from Playwright`,
   });
   private readonly pw_config = new Counter(
     {
       name: "config",
+      description: `Configuration settings for Playwright`,
     },
-    1
+    1,
   );
-  private test_attachment = new Counter(
-    {
-      name: "test_attachment",
-    },
-    0
-  );
+
+  private test_attachment_count = new Counter({
+    name: "test_attachment_count",
+    description: "Count of attachments in tests",
+  });
   private test_attachment_size = new Gauge({
     name: "test_attachment_size",
     unit: "bytes",
+    description: "information about attachment size for each test",
   });
   private tests_total_attachment_size = new Gauge({
     name: "tests_attachment_total_size",
@@ -167,7 +180,7 @@ export default class PrometheusReporter implements Reporter {
   private test = new Counter({
     name: "test",
   });
-  private test_retry = new Counter({
+  private test_retry_count = new Counter({
     name: "test_retry_count",
   });
   private total_duration = new Gauge({
@@ -225,10 +238,10 @@ export default class PrometheusReporter implements Reporter {
     {
       name: "node_argv",
       ...Object.fromEntries(
-        argv.map((value, index) => [index, value] as const)
+        argv.map((value, index) => [index, value] as const),
       ),
     },
-    1
+    1,
   );
   private readonly node_os = new Counter(
     {
@@ -247,7 +260,7 @@ export default class PrometheusReporter implements Reporter {
       type: type(),
       version: version(),
     },
-    1
+    1,
   );
 
   private readonly node_env: Counter;
@@ -257,7 +270,7 @@ export default class PrometheusReporter implements Reporter {
       name: "node_versions",
       ...versions,
     },
-    1
+    1,
   );
 
   /** timeseries from user tests */
@@ -280,7 +293,7 @@ export default defineConfig({
   ],
   // ...
 });
-`
+`,
         );
       })();
     this.options.headers = options?.headers ?? {};
@@ -294,7 +307,7 @@ export default defineConfig({
         name: "env",
         ...this.env,
       },
-      1
+      1,
     );
   }
 
@@ -316,17 +329,17 @@ export default defineConfig({
   }
   private async sendNodejsStats() {
     const stats = [
-      this.node_cpu_user._getSeries(),
-      this.node_cpu_system._getSeries(),
-      this.node_memory_array_buffers._getSeries(),
-      this.node_memory_external._getSeries(),
-      this.node_memory_heap_total._getSeries(),
-      this.node_memory_heap_used._getSeries(),
-      this.node_memory_rss._getSeries(),
-      this.node_os._getSeries(),
-      this.node_env._getSeries(),
-      this.node_argv._getSeries(),
-      this.node_versions._getSeries(),
+      this.node_cpu_user,
+      this.node_cpu_system,
+      this.node_memory_array_buffers,
+      this.node_memory_external,
+      this.node_memory_heap_total,
+      this.node_memory_heap_used,
+      this.node_memory_rss,
+      this.node_os,
+      this.node_env,
+      this.node_argv,
+      this.node_versions,
     ].map((s) => this.mapTimeseries(s));
 
     await this.send(stats);
@@ -361,7 +374,7 @@ export default defineConfig({
           timeout: String(project.timeout),
           unit: "ms",
         },
-        1
+        1,
       );
     });
     this.updateNodejsStats();
@@ -385,13 +398,16 @@ export default defineConfig({
   }
 
   async onStepEnd(test: TestCase, result: TestResult, step: TestStep) {
-    this.pw_step.labels({
+    this.test_step.labels({
+      path: this.location(step),
       category: step.category,
       testId: test.id,
       testTitle: test.title,
       stepTitle: step.title,
+      stepInnerCount: String(step.steps.length),
+      startTime: String(step.startTime),
     });
-    this.pw_step_total_duration
+    this.test_step_total_duration
       .labels({
         testId: test.id,
         testTitle: test.title,
@@ -411,10 +427,10 @@ export default defineConfig({
         testTitle: test.title,
         unit: "bytes",
       };
-      this.test_attachment
+      this.test_attachment_count
         .labels({
-          path: attach.path ?? "",
           size: String(size),
+          path: attach.path ?? "",
           contentType: attach.contentType,
           attachmentName: attach.name,
           body: attach.body ? Buffer.from(attach.body).toString("utf-8") : "",
@@ -426,7 +442,7 @@ export default defineConfig({
     });
 
     test.annotations.forEach((annotation) => {
-      this.pw_test_annotations
+      this.test_annotation_count
         .labels({
           type: annotation.type,
           description: annotation.description ?? "",
@@ -451,35 +467,70 @@ export default defineConfig({
       retryCount: String(result.retry),
     };
 
-    this.pw_step_total_count.inc(result.steps.length);
+    this.test_total_count.inc();
+    const testSeries = this.test.labels(labels).inc();
+    const testDuration = this.test_duration.labels(labels).set(result.duration);
+    const testRetries = this.test_retry_count.labels(labels).inc(result.retry);
 
-    const testSeries = this.mapTimeseries(
-      this.test.labels(labels).inc()._getSeries()
-    );
-    const testDuration = this.mapTimeseries(
-      this.test_duration.labels(labels).set(result.duration)._getSeries()
-    );
-    const testRetries = this.mapTimeseries(
-      this.test_retry.labels(labels).inc(result.retry)._getSeries()
-    );
+    for (const step of result.steps) {
+      this.test_step_duration.reset();
+      this.test_step_error_count.reset();
+
+      const location = this.location(step);
+      const labels: Record<string, string> = {
+        category: step.category,
+        path: location,
+        testId: test.id,
+        duration: String(step.duration),
+        startTime: String(step.startTime),
+        titlePath: step.titlePath().join("->"),
+        stepsCount: String(step.steps.length),
+      };
+
+      if (step.error) {
+        const errorMessage =
+          step.error.message?.replace(/\r?\n|\r/g, " ") ??
+          // [TODO] trim message?
+          JSON.stringify(step.error.message);
+        labels.errorMessage = errorMessage;
+        labels.errorSnippet = String(step.error.snippet ?? "<unknown snippet>");
+        labels.errorStack = String(step.error.stack ?? "<empty stack>");
+        labels.errorValue = String(step.error.value ?? "<unknown value>");
+        labels.errorPath = this.location(step.error);
+
+        this.test_step_total_error.labels(labels).inc();
+        this.test_step_error_count.labels(labels).inc();
+      }
+
+      this.test_step_total_duration.inc(step.duration);
+      this.test_step_total_count.inc();
+      this.test_step_duration.labels(labels).inc(step.duration);
+
+      await this.send(
+        [this.test_step_duration, this.test_step_error_count].map((m) =>
+          this.mapTimeseries(m),
+        ),
+      );
+    }
 
     await this.send([
-      this.mapTimeseries(this.pw_step._getSeries()),
-      this.mapTimeseries(this.pw_step_total_duration._getSeries()),
-      this.mapTimeseries(this.test_attachment_size._getSeries()),
-      this.mapTimeseries(this.pw_test_annotations._getSeries()),
-      testSeries,
-      testDuration,
-      testRetries,
-      this.mapTimeseries(this.test_attachment._getSeries()),
+      this.mapTimeseries(this.test_step),
+      this.mapTimeseries(this.test_step_total_duration),
+      this.mapTimeseries(this.test_attachment_size),
+      this.mapTimeseries(this.test_annotation_count),
+      this.mapTimeseries(testSeries),
+      this.mapTimeseries(testDuration),
+      this.mapTimeseries(testRetries),
+      this.mapTimeseries(this.test_step_total_error),
+      this.mapTimeseries(this.test_attachment_size),
+      this.mapTimeseries(this.test_step_total_count),
     ]);
 
-    this.pw_step.reset();
-    this.pw_test_annotations.reset();
+    this.test_step.reset();
+    this.test_annotation_count.reset();
     this.test = this.test.reset();
     this.test_duration = this.test_duration.reset();
-    this.test_retry = this.test_retry.reset();
-    this.pw_step_total_duration.reset();
+    this.test_retry_count = this.test_retry_count.reset();
     this.test_attachment_size.reset();
     this.updateNodejsStats();
   }
@@ -487,6 +538,7 @@ export default defineConfig({
   onError(error: TestError): void {
     this.errors_count
       .labels({
+        path: this.location(error),
         message: String(error.message ?? ""),
         snippet: String(error.snippet ?? ""),
         value: String(error.value ?? ""),
@@ -496,7 +548,14 @@ export default defineConfig({
     this.updateNodejsStats();
   }
 
-  private mapTimeseries(series: Timeseries): Timeseries {
+  private mapTimeseries(
+    seriesOrMetric: Timeseries | Gauge | Counter | Metric,
+  ): Timeseries {
+    let series: Timeseries = seriesOrMetric as Timeseries;
+    if (seriesOrMetric instanceof Counter || seriesOrMetric instanceof Gauge) {
+      series = seriesOrMetric._getSeries();
+    }
+
     const { __name__, ...restLabels } = series.labels;
     const timeseries: Timeseries = {
       labels: {
@@ -511,7 +570,7 @@ export default defineConfig({
   async onStdOut(
     chunk: string | Buffer,
     test: void | TestCase,
-    result: void | TestResult
+    result: void | TestResult,
   ) {
     const labels = {
       text: Buffer.from(chunk).toString("utf-8"),
@@ -587,34 +646,43 @@ export default defineConfig({
   }
 
   async onExit(): Promise<void> {
-    await this.send([
-      this.mapTimeseries(this.pw_config._getSeries()),
-      this.mapTimeseries(this.pw_stdout._getSeries()),
-      this.mapTimeseries(this.pw_stderr._getSeries()),
-      this.mapTimeseries(this.failed_count._getSeries()),
-      this.mapTimeseries(this.passed_count._getSeries()),
-      this.mapTimeseries(this.skipped_tests_count._getSeries()),
-      this.mapTimeseries(this.timed_out_tests_count._getSeries()),
-      this.mapTimeseries(this.test_total_count._getSeries()),
-      this.mapTimeseries(this.total_duration._getSeries()),
-      this.mapTimeseries(this.tests_total_attachment._getSeries()),
-      this.mapTimeseries(this.pw_step_total_count._getSeries()),
-      this.mapTimeseries(this.tests_total_attachment_size._getSeries()),
-      ...this.timeseries,
-      ...this.pw_projects.map((p) => this.mapTimeseries(p._getSeries())),
-    ]);
+    await this.send(this.timeseries);
+    await this.send(
+      [
+        this.pw_config,
+        this.pw_stdout,
+        this.pw_stderr,
+        this.failed_count,
+        this.passed_count,
+        this.skipped_tests_count,
+        this.timed_out_tests_count,
+        this.test_total_count,
+        this.total_duration,
+        this.tests_total_attachment,
+        this.test_step_total_count,
+        this.tests_total_attachment_size,
+        this.test_step_total_duration,
+        this.test_step_total_error,
+        ...this.pw_projects,
+      ].map((metric) => this.mapTimeseries(metric)),
+    );
 
     this.updateNodejsStats();
     await this.sendNodejsStats();
   }
-  private location(test: TestCase) {
-    const relativePath = path.relative(process.cwd(), test.location.file);
-    return `${relativePath}:${test.location.line}:${test.location.column}`;
+  private location(
+    test: TestCase | TestStep | TestError,
+  ): `${string}:${number}:${number}` {
+    const relativePath = path.relative(
+      process.cwd(),
+      test.location?.file ?? "unknown",
+    );
+    return `${relativePath}:${test.location?.line}:${test.location?.column}` as `${string}:${number}:${number}`;
   }
   printsToStdio(): boolean {
     return false;
   }
 }
 
-export * from "./helpers";
+export { Counter, Gauge } from "./helpers";
 export * from "./fixture";

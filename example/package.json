@@ -4,8 +4,7 @@
   "author": "",
   "main": "index.js",
   "devDependencies": {
-    "@types/node": "^20.10.4",
-    "playwright-prometheus-remote-writer-reporter": "../"
+    "@types/node": "^20.10.4"
   },
   "description": "",
   "keywords": [],
@@ -16,6 +15,7 @@
     "prometheus:run": "docker run -p 9090:9090 -v ./prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus --config.file=/etc/prometheus/prometheus.yml --enable-feature=remote-write-receiver"
   },
   "dependencies": {
-    "@playwright/test": "1.40.1"
+    "@playwright/test": "1.52.0",
+    "playwright-prometheus-remote-write-reporter": "file:.."
   }
 }
