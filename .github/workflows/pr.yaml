@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node_version: [18, 20, 22, latest]
+        node_version: [20, 22, latest]
         pnpm_version: [9.6.0, 10.11.0, latest]
     steps:
       - name: Clone repository

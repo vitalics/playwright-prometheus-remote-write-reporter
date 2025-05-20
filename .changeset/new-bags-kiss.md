@@ -42,3 +42,4 @@ added `description` meta info for such metrics as experiment:
 ### 🏡 Chore/Infra/Internal/Tests
 
 - update `pnpm` version in github pipelines (`pr.yaml` and `release.yaml`)
+- drop nodejs18 support in build stage(`pr.yaml`) due to end of maintenance nodejs official support
