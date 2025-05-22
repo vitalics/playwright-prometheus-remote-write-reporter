@@ -1,4 +1,12 @@
-import { expect as baseExpect, test as baseTest } from "@playwright/test";
+import {
+  expect as baseExpect,
+  test as baseTest,
+  PlaywrightTestArgs,
+  PlaywrightTestOptions,
+  PlaywrightWorkerArgs,
+  PlaywrightWorkerOptions,
+  TestType,
+} from "@playwright/test";
 
 import { Counter, Gauge } from "./helpers";
 
@@ -30,7 +38,13 @@ export interface PromRWFixture {
    * });
    * ```
    */
-  useCounterMetric: (name: string, labels?: Record<string, string>) => Counter;
+  useCounterMetric: <
+    const Name extends string = string,
+    const Labels extends Record<string, string> = Record<string, string>
+  >(
+    name: Name,
+    labels?: Labels
+  ) => Counter<Name, Labels>;
   /**
    * Creates a Gauge metric with the specified name and optional labels.
    * @param name - The name of the gauge metric.
@@ -64,12 +78,26 @@ export interface PromRWFixture {
   useGaugeMetric: (name: string, labels?: Record<string, string>) => Gauge;
 }
 
-export const test = baseTest.extend<PromRWFixture>({
+export const test: TestType<
+  PlaywrightTestArgs & PlaywrightTestOptions & PromRWFixture,
+  PlaywrightWorkerArgs & PlaywrightWorkerOptions
+> = baseTest.extend<PromRWFixture>({
   useCounterMetric: [
     async ({}, use) => {
-      await use((name, labels) => {
-        return new Counter({ name, ...labels });
-      });
+      await use(
+        <
+          Name extends string = string,
+          Labels extends Record<string, string> = Record<string, string>
+        >(
+          name: Name,
+          labels?: Labels
+        ) => {
+          if (labels && typeof labels === "object" && labels !== null) {
+            return new Counter<Name, Labels>({ name, ...labels });
+          }
+          return new Counter<Name, Labels>({ name, ...({} as Labels) });
+        }
+      );
     },
     { box: true },
   ],

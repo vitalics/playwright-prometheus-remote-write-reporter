@@ -8,7 +8,7 @@ export class Event {
   ) {}
 
   /**
-   * Retrurns `true` if incoming object is event.
+   * Returns `true` if incoming object is event.
    * False in other cases
    */
   static is(input: unknown): input is Event {

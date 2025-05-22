@@ -2,7 +2,7 @@
 
 ## 0.2.0
 
-### Major Changes
+### Minor Changes
 
 - 0ca42dd: This file contains next updates:
 
