@@ -1,5 +1,3 @@
-packages:
-  - "."
 onlyBuiltDependencies:
   - esbuild
   - protobufjs
