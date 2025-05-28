@@ -1,5 +1,12 @@
 # playwright-prometheus-remote-write-reporter
 
+## 0.2.2
+
+### Patch Changes
+
+- fc44052: - Move test step collection metrics into `onTestStepEnd` hook
+  - Update readme about metrics name
+
 ## 0.2.1
 
 ### Patch Changes
