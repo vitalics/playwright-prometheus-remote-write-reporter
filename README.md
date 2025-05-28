@@ -30,8 +30,8 @@ bun a playwright-prometheus-remote-write-reporter # bun
 In your `playwright.config.ts` add next lines:
 
 ```ts
-import { defineConfig } from '@playwright/test'
-import { type PrometheusOptions } from 'playwright-prometheus-remote-write-reporter'
+import { defineConfig } from "@playwright/test";
+import { type PrometheusOptions } from "playwright-prometheus-remote-write-reporter";
 
 export default defineConfig({
   // ...
@@ -39,7 +39,7 @@ export default defineConfig({
     [
       "playwright-prometheus-remote-write-reporter",
       {
-        serverUrl: 'http://localhost:9090/api/v1/write' // same url as declared in precondition
+        serverUrl: "http://localhost:9090/api/v1/write", // same url as declared in precondition
       } satisfies PrometheusOptions, // for autocomplete
     ],
   ],
@@ -77,20 +77,31 @@ this metrics below sends periodically and you may found when they sends
 | project                      | playwright project object. E.g. chromium, firefox            | onExit                 |
 | test                         | test object                                                  | onTestEnd              |
 | test_attachment              | test attachment information                                  | onTestEnd              |
+| tests_total_attachment_size  | size (in bytes) about attachments across whole run           | onTestEnd              |
+| test_attachment_count        | count of attachments across whole run                        | onTestEnd              |
 | test_attachment_size         | attachment size in bytes                                     | onTestEnd              |
-| test_annnotation             | annotations for 1 test                                       | onTestEnd              |
+| test_annotation              | annotations for 1 test                                       | onTestEnd              |
+| test_step_total_count        | count of test steps across whole run                         | onTestEnd              |
+| test_step_total_duration     | duration(in ms) how long test steps has been executed        | onTestEnd              |
+| test_annotation_count        | count of annotations across all tests                        | onTestEnd              |
 | test_error                   | test errors information                                      | onTestEnd              |
 | test_duration                | test duration in milliseconds                                | onTestEnd              |
 | test_retry_count             | count of retries for 1 test                                  | onTestEnd              |
+| timed_out_tests_count        | count of tests with `timedOut` status                        | onTestEnd              |
+| test_step_total_error        | Count of errors in all test steps                            | onTestEnd              |
+| test_step_duration           | duration of test step                                        | onTestStepEnd          |
+| test_step_error_count        | Count of errors in test steps                                | onTestStepEnd          |
+| test_step                    | Individual test steps information                            | onTestStepEnd          |
 | tests_attachment_total_size  | total attachment size in bytes for all tests                 | onExit                 |
 | tests_total_duration         | time for all tests                                           | onExit                 |
 | tests_total_count            | total count of all tests                                     | onExit                 |
-| tests_skip_count             | count of all skipped tests                                   | onExit                 |
-| tests_pass_count             | count of all passed tests                                    | onExit                 |
-| tests_fail_count             | count of all failed tests                                    | onExit                 |
-| tests_timed_out_count        | count of all timedOut tests                                  | onExit                 |
+| passed_count                 | count of all passed tests                                    | onExit                 |
+| timed_out_tests_count        | count of all tests with `timedOut` status                    | onExit                 |
+| skipped_tests_count          | count of all skipped tests                                   | onExit                 |
+| passed_count                 | count of all tests with `passed` status                      | onExit                 |
+| failed_count                 | count of all failed tests                                    | onExit                 |
 | tests_attachment_total_count | count of attachments across all tests                        | onExit                 |
-| error_count                  | count of errors                                              | onError                |
+| errors_count                 | count of errors across all tests                             | onError                |
 | stdout                       | stdout for test. Reporter logs have label: `internal="true"` | onStdOut               |
 | stderr                       | stdout for test. Reporter logs have label: `internal="true"` | onStdErr               |
 
@@ -141,7 +152,7 @@ const countOfUrlCalls = new Counter(
     // only name is required
     name: "url_open", // will automatically appends prefix
   },
-  0
+  0,
 ); // starts from 0
 
 test("simple counter test", async ({ page }) => {

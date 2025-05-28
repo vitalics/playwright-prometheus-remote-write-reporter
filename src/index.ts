@@ -131,7 +131,7 @@ export default class PrometheusReporter implements Reporter {
     name: "test_step_total_error",
     description: `Total errors in test steps`,
   });
-  private readonly test_step = new Counter({
+  private test_step = new Counter({
     name: "test_step",
     description: `Individual test steps`,
   });
@@ -168,7 +168,7 @@ export default class PrometheusReporter implements Reporter {
     name: "error_count",
   });
   private test_errors = new Counter({
-    name: "test_error",
+    name: "test_errors",
   });
   private tests_total_attachment = new Counter({
     name: "tests_attachment_total_count",
@@ -398,15 +398,42 @@ export default defineConfig({
   }
 
   async onStepEnd(test: TestCase, result: TestResult, step: TestStep) {
-    this.test_step.labels({
-      path: this.location(step),
+    const location = this.location(step);
+    const labels: Record<string, string> = {
       category: step.category,
+      path: location,
       testId: test.id,
-      testTitle: test.title,
-      stepTitle: step.title,
-      stepInnerCount: String(step.steps.length),
+      duration: String(step.duration),
       startTime: String(step.startTime),
-    });
+      titlePath: step.titlePath().join("->"),
+      stepsCount: String(step.steps.length),
+      testTitle: test.title,
+      stepInnerCount: String(step.steps.length),
+      parallelIndex: String(result.parallelIndex),
+      retryCount: String(result.retry),
+      status: String(result.status),
+    };
+    if (step.error) {
+      const errorMessage =
+        step.error.message?.replace(/\r?\n|\r/g, " ") ??
+        // [TODO] trim message?
+        JSON.stringify(step.error.message);
+      labels.errorMessage = errorMessage;
+      labels.errorSnippet = String(step.error.snippet ?? "<unknown snippet>");
+      labels.errorStack = String(step.error.stack ?? "<empty stack>");
+      labels.errorValue = String(step.error.value ?? "<unknown value>");
+      labels.errorPath = this.location(step.error);
+
+      this.test_step_total_error.labels(labels).inc();
+      this.test_step_error_count.labels(labels).inc();
+    }
+
+    this.test_step_total_duration.inc(step.duration);
+    this.test_step_total_count.inc();
+    this.test_step_duration.labels(labels).inc(step.duration);
+
+    this.test_step.labels(labels);
+
     this.test_step_total_duration
       .labels({
         testId: test.id,
@@ -414,6 +441,12 @@ export default defineConfig({
       })
       .inc(step.duration);
     this.updateNodejsStats();
+    await this.send(
+      [this.test_step_duration, this.test_step_error_count, this.test_step].map(
+        (m) => this.mapTimeseries(m),
+      ),
+    );
+    this.test_step.reset();
   }
 
   async onTestEnd(test: TestCase, result: TestResult) {
@@ -472,47 +505,6 @@ export default defineConfig({
     const testDuration = this.test_duration.labels(labels).set(result.duration);
     const testRetries = this.test_retry_count.labels(labels).inc(result.retry);
 
-    for (const step of result.steps) {
-      this.test_step_duration.reset();
-      this.test_step_error_count.reset();
-
-      const location = this.location(step);
-      const labels: Record<string, string> = {
-        category: step.category,
-        path: location,
-        testId: test.id,
-        duration: String(step.duration),
-        startTime: String(step.startTime),
-        titlePath: step.titlePath().join("->"),
-        stepsCount: String(step.steps.length),
-      };
-
-      if (step.error) {
-        const errorMessage =
-          step.error.message?.replace(/\r?\n|\r/g, " ") ??
-          // [TODO] trim message?
-          JSON.stringify(step.error.message);
-        labels.errorMessage = errorMessage;
-        labels.errorSnippet = String(step.error.snippet ?? "<unknown snippet>");
-        labels.errorStack = String(step.error.stack ?? "<empty stack>");
-        labels.errorValue = String(step.error.value ?? "<unknown value>");
-        labels.errorPath = this.location(step.error);
-
-        this.test_step_total_error.labels(labels).inc();
-        this.test_step_error_count.labels(labels).inc();
-      }
-
-      this.test_step_total_duration.inc(step.duration);
-      this.test_step_total_count.inc();
-      this.test_step_duration.labels(labels).inc(step.duration);
-
-      await this.send(
-        [this.test_step_duration, this.test_step_error_count].map((m) =>
-          this.mapTimeseries(m),
-        ),
-      );
-    }
-
     await this.send([
       this.mapTimeseries(this.test_step),
       this.mapTimeseries(this.test_step_total_duration),
@@ -526,7 +518,7 @@ export default defineConfig({
       this.mapTimeseries(this.test_step_total_count),
     ]);
 
-    this.test_step.reset();
+    this.test_step = this.test_step.reset();
     this.test_annotation_count.reset();
     this.test = this.test.reset();
     this.test_duration = this.test_duration.reset();
