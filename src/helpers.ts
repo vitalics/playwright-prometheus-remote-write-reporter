@@ -3,7 +3,7 @@ import { Event } from "./utils";
 
 export abstract class Metric<
   const MetricName extends string = string,
-  const Labels extends Record<string, string> = Record<string, string>
+  const Labels extends Record<string, string> = Record<string, string>,
 > {
   /** **NOTE:** Must be initialized in constructor */
   protected series!: Timeseries;
@@ -33,6 +33,11 @@ export abstract class Metric<
   }
   /** revert metric to initial state */
   abstract reset(): this;
+
+  [Symbol.dispose]() {
+    this.collect();
+    this.reset();
+  }
 }
 
 /**
@@ -42,12 +47,12 @@ export abstract class Metric<
  */
 export class Counter<
   const MetricName extends string = string,
-  const Labels extends Record<string, string> = Record<string, string>
+  const Labels extends Record<string, string> = Record<string, string>,
 > extends Metric<MetricName, Labels> {
   protected counter: number = 0;
   constructor(
     protected readonly metadata: Record<"name", MetricName> & Labels,
-    protected initialValue = 0
+    protected initialValue = 0,
   ) {
     super(metadata);
 
@@ -84,7 +89,7 @@ export class Counter<
 /* Gauges are similar to Counters but a Gauge's value can be decreased. */
 export class Gauge<
   const MetricName extends string = string,
-  const Labels extends Record<string, string> = Record<string, string>
+  const Labels extends Record<string, string> = Record<string, string>,
 > extends Counter<MetricName, Labels> {
   /** Decrement gauge value */
   dec(value = 1) {
