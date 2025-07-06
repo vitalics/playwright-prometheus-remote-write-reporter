@@ -1,5 +1,12 @@
 # playwright-prometheus-remote-write-reporter
 
+## 0.2.3
+
+### Patch Changes
+
+- e88596f: Fix issue with wrong node_argv labels for Grafana mimir (see #34)
+- b828395: implement Symbol.dispose for all metrics for explicit resource management
+
 ## 0.2.2
 
 ### Patch Changes
