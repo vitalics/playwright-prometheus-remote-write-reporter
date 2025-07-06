@@ -244,7 +244,10 @@ You can read more about fixtures in [official docs page](https://playwright.dev/
 We additional recommends to use one of 2 practices for send metrics to prometheus via `collect` method:
 
 - on afterEach/afterAll hook
+- on each test
 - on base hook
+
+You also can use `using` keyword to automatically call `.collect` and `.reset` methods after the end of lexical environment. See [explicit resource management](https://github.com/tc39/proposal-explicit-resource-management) TC39 proposal.
 
 example:
 
@@ -268,6 +271,15 @@ const test = base.extend<Context>({
 test("extended test", ({ urlCalls }) => {
   // ...
   urlCalls.inc();
+});
+
+// or with using keyword
+test("Some long test", () => {
+  using someMetricDuringTheTest = new Counter({ name: "some_metric" });
+  someMetricDuringTheTest.inc();
+  page.goto("SomePage");
+  // ...
+  // automatically calls .collect and .reset methods, due to the using keyword
 });
 
 // or
