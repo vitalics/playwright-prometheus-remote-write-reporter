@@ -238,7 +238,7 @@ export default class PrometheusReporter implements Reporter {
     {
       name: "node_argv",
       ...Object.fromEntries(
-        argv.map((value, index) => [index, value] as const),
+        argv.map((value, index) => [`arg_${index}`, value] as const),
       ),
     },
     1,

@@ -111,33 +111,34 @@ This metrics collects every reporter lifecycle.
 
 [Playwright Reporter API hooks](https://playwright.dev/docs/api/class-reporter)
 
-| Name                      | Description                                                                          | Value               |
-| ------------------------- | ------------------------------------------------------------------------------------ | ------------------- |
-| node_env                  | environment variables [1] [2].                                                       | undefined           |
-| node_argv                 | command-line arguments passed when the Node.js process was launched (playwright) [3] | process.argv        |
-| node_versions             | version strings of Node.js and its dependencies [4]                                  | process.versions    |
-| node_os                   | information about current operation system [5]                                       | os                  |
-| node_cpu_system           | cpu system utilization [6]                                                           | process.cpuUsage    |
-| node_cpu_user             | cpu user utilization [6]                                                             | process.cpuUsage    |
-| node_memory_external      | memory usage of the Node.js process measured in bytes [7]                            | process.memoryUsage |
-| node_memory_array_buffers | memory usage of the Node.js process measured in bytes [7]                            | process.memoryUsage |
-| node_memory_heap_used     | memory usage of the Node.js process measured in bytes [7]                            | process.memoryUsage |
-| node_memory_rss           | memory usage of the Node.js process measured in bytes [7]                            | process.memoryUsage |
-| node_memory_heap_total    | memory usage of the Node.js process measured in bytes [7]                            | process.memoryUsage |
+| Name                      | Description                                                                              | Value               |
+| ------------------------- | ---------------------------------------------------------------------------------------- | ------------------- |
+| node_env                  | environment variables [1] [2].                                                           | undefined           |
+| node_argv                 | command-line arguments passed when the Node.js process was launched (playwright) [3] [4] | process.argv        |
+| node_versions             | version strings of Node.js and its dependencies [5]                                      | process.versions    |
+| node_os                   | information about current operation system [6]                                           | os                  |
+| node_cpu_system           | cpu system utilization [7]                                                               | process.cpuUsage    |
+| node_cpu_user             | cpu user utilization [7]                                                                 | process.cpuUsage    |
+| node_memory_external      | memory usage of the Node.js process measured in bytes [8]                                | process.memoryUsage |
+| node_memory_array_buffers | memory usage of the Node.js process measured in bytes [8]                                | process.memoryUsage |
+| node_memory_heap_used     | memory usage of the Node.js process measured in bytes [8]                                | process.memoryUsage |
+| node_memory_rss           | memory usage of the Node.js process measured in bytes [8]                                | process.memoryUsage |
+| node_memory_heap_total    | memory usage of the Node.js process measured in bytes [8]                                | process.memoryUsage |
 
 [1]: Do not use "process.env.name" variable since it can overwrite your "node_env" metric.
 
 [2]: docs: https://nodejs.org/docs/latest/api/process.html#processenv
 
 [3]: docs: https://nodejs.org/docs/latest/api/process.html#processargv
+[4]: Map process.argv into process.argv with labels `arg_{index} = value` (see issue #34)
 
-[4]: docs: https://nodejs.org/docs/latest/api/process.html#processversions
+[5]: docs: https://nodejs.org/docs/latest/api/process.html#processversions
 
-[5]: docs: https://nodejs.org/docs/latest/api/os.html#osarch
+[6]: docs: https://nodejs.org/docs/latest/api/os.html#osarch
 
-[6]: docs: https://nodejs.org/docs/latest/api/process.html#processcpuusagepreviousvalue
+[7]: docs: https://nodejs.org/docs/latest/api/process.html#processcpuusagepreviousvalue
 
-[7]: docs: https://nodejs.org/docs/latest/api/process.html#processmemoryusage
+[8]: docs: https://nodejs.org/docs/latest/api/process.html#processmemoryusage
 
 ## Using custom metrics
 
