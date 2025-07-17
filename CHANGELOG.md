@@ -1,5 +1,11 @@
 # playwright-prometheus-remote-write-reporter
 
+## 0.2.5
+
+### Patch Changes
+
+- d117c6c: cleanup publish files and reduce total package size (~8%)
+
 ## 0.2.4
 
 ### Patch Changes
