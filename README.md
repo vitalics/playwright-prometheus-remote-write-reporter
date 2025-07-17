@@ -10,7 +10,7 @@
 ```yaml
 ---
 remote_write:
-  # local?
+  # fill url for your prometheus config here
   - url: http://localhost:9090/api/v1/write
 ```
 

@@ -35,6 +35,15 @@
     "grafana",
     "monitoring"
   ],
+  "homepage": "https://github.com/vitalics/playwright-prometheus-remote-write-reporter#readme",
+  "bugs": {
+    "url": "https://github.com/vitalics/playwright-prometheus-remote-write-reporter/issues",
+    "email": "vitalicset@yandex.ru"
+  },
+  "repository": {
+    "url": "git+https://github.com/vitalics/playwright-prometheus-remote-write-reporter.git",
+    "type": "git"
+  },
   "author": "Vitali Haradkou <vitalicset@yandex.ru>",
   "license": "MIT",
   "devDependencies": {
