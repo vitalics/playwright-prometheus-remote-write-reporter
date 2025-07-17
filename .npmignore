@@ -5,3 +5,6 @@ example
 node_modules
 src
 tsup.config.ts
+.changeset
+UPCOMING.md
+CHANGELOG.md
