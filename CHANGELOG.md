@@ -1,5 +1,11 @@
 # playwright-prometheus-remote-write-reporter
 
+## 0.2.4
+
+### Patch Changes
+
+- 723be26: Update package.json metadata
+
 ## 0.2.3
 
 ### Patch Changes
