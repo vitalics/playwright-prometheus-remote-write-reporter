@@ -1,5 +1,11 @@
 # playwright-prometheus-remote-write-reporter
 
+## 0.2.6
+
+### Patch Changes
+
+- c280956: fix: remove extra increment of `test_total_count` metric (#42)
+
 ## 0.2.5
 
 ### Patch Changes
