@@ -500,7 +500,6 @@ export default defineConfig({
       retryCount: String(result.retry),
     };
 
-    this.test_total_count.inc();
     const testSeries = this.test.labels(labels).inc();
     const testDuration = this.test_duration.labels(labels).set(result.duration);
     const testRetries = this.test_retry_count.labels(labels).inc(result.retry);
